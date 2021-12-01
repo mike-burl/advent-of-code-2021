@@ -4,8 +4,8 @@ with open('input.txt') as file:
     lines = file.readlines()
     
 # First set the first two indexes in the array
-firstNum = lines[0]
-secondNum = lines[1]
+firstNum = int(lines[0])
+secondNum = int(lines[1])
 
 # Initialize our counter and check to see if secondNum > firstNum
 counter = 0
@@ -16,7 +16,7 @@ hasPrinted = False
 # Now we loop over the remaining items in the array
 for line in lines[2:]:
     firstNum = secondNum
-    secondNum = line
+    secondNum = int(line)
     
     if secondNum > firstNum:
         counter = counter + 1
