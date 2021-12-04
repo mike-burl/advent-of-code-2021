@@ -8,6 +8,9 @@ height = 5
 draws = []
 boards = []
 
+# Keep the indexes of all winning boards so we can skip them for efficiency reasons and to also keep track of when we've found the ULTIMATE LOSER
+winningBoards = []
+
 # Open the data file and extract our data
 def getData(runFlag):
     print('Opening input file...')
@@ -47,8 +50,12 @@ def checkBingo(boardNum, x, y):
         if board[y][xIter] == 'X':
             hitCount = hitCount + 1
             if hitCount == 5:
-                #Bingo!
-                return True
+                #Bingo!  Add the boardNum to the winner's list.  If it's the last board, we'll return True.  Otherwise we'll pretend the game is still going
+                winningBoards.append(boardNum)
+                if len(winningBoards) < len(boards):
+                    return False
+                else:
+                    return True
         else:
             # Miss! Reset the hit counter and break the loop
             hitCount = 0
@@ -58,8 +65,12 @@ def checkBingo(boardNum, x, y):
         if board[yIter][x] == 'X':
             hitCount = hitCount + 1
             if hitCount == 5:
-                #Bingo!
-                return True
+                #Bingo!  Add the boardNum to the winner's list.  If it's the last board, we'll return True.  Otherwise we'll pretend the game is still going
+                winningBoards.append(boardNum)
+                if len(winningBoards) < len(boards):
+                    return False
+                else:
+                    return True
         else:
             # Miss! There's nothing left to do so return False
             return False
@@ -79,18 +90,23 @@ def checkBoard(boardNum, draw, board):
 def playBingo(draws, boards):
     # Iterate through our draws and pass the number to each bingo board
     for draw in draws:
+        numSkips = 0
         for boardNum, board in enumerate(boards):
-            winFlag = checkBoard(boardNum, draw, board)
-            if winFlag == "Bingo":
+            # Check to see if the board has already won.  If it has, skip it
+            if boardNum in winningBoards:
+                numSkips = numSkips + 1
+                continue
+            loseFlag = checkBoard(boardNum, draw, board)
+            if loseFlag == "Bingo":
                 return draw, board
     # We shouldn't be able to reach this line
     return None, None
 
 # Calculate the final answer
-def calculateFinalAnswer(winningNumber, winningBoard):
+def calculateFinalAnswer(winningNumber, losingBoard):
     # First find the sum of all unmarked numbers
     sum = 0
-    for row in winningBoard:
+    for row in losingBoard:
         for cell in row:
             if cell != "X":
                 sum = sum + int(cell)
@@ -101,9 +117,9 @@ def calculateFinalAnswer(winningNumber, winningBoard):
 runFlag = sys.argv[1]
 
 getData(runFlag)
-#pprint.pprint(boards)
-winningNumber, winningBoard = playBingo(draws, boards)
+
+winningNumber, losingBoard = playBingo(draws, boards)
 print("Winning number: " + winningNumber)
-finalAnswer = calculateFinalAnswer(winningNumber, winningBoard)
+finalAnswer = calculateFinalAnswer(winningNumber, losingBoard)
 print("Final answer: " + str(finalAnswer))
 print("Done!")
