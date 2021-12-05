@@ -50,7 +50,7 @@ def plotVents():
             else:
                 ventGrid[vent[1]][vent[0]] = ventGrid[vent[1]][vent[0]] + 1
         # Horizontal vents
-        if vent[1] == vent[3]:
+        elif vent[1] == vent[3]:
             if vent[2] > vent[0]:
                 for x in range(vent[2] - vent[0] + 1):
                     ventGrid[vent[1]][x + vent[0]] = ventGrid[vent[1]][x + vent[0]] + 1
@@ -59,9 +59,25 @@ def plotVents():
                     ventGrid[vent[1]][x + vent[2]] = ventGrid[vent[1]][x + vent[2]] + 1
             else:
                 ventGrid[vent[1]][vent[0]] = ventGrid[vent[1]][vent[0]] + 1
-        # Diagonal vent, we're skipping this for now
+        # Diagonal vents
         else:
-            foo = 1
+            # First find out which direction the diagonal vent is going, then adjust the ventGrid
+            # Southeast
+            if vent[0] < vent[2] and vent[1] < vent[3]:
+                for x in range(vent[2] - vent[0] + 1):
+                    ventGrid[vent[1] + x][vent[0] + x] = ventGrid[vent[1] + x][vent[0] + x] + 1
+            # Northeast
+            elif vent[0] < vent[2] and vent[1] > vent[3]:
+                for x in range(vent[2] - vent[0] + 1):
+                    ventGrid[vent[1] - x][vent[0] + x] = ventGrid[vent[1] - x][vent[0] + x] + 1
+            # Southwest
+            elif vent[0] > vent[2] and vent[1] > vent[3]:
+                for x in range(vent[0] - vent[2] + 1):
+                    ventGrid[vent[3] + x][vent[2] + x] = ventGrid[vent[3] + x][vent[2] + x] + 1
+            # Northwest
+            else:
+                for x in range(vent[0] - vent[2] + 1):
+                    ventGrid[vent[3] - x][vent[2] + x] = ventGrid[vent[3] - x][vent[2] + x] + 1
 
 # Sum up the number of cells with a vent count greater than one
 def getFinalAnswer():
