@@ -3,8 +3,7 @@ import re
 import pprint
 
 # global variables
-lanternfish = []
-newborns = []
+lanternfish = [0] * 9
 
 # Open the data file and extract our data
 def getData(runFlag):
@@ -17,28 +16,35 @@ def getData(runFlag):
         line = "".join(line.replace("->", ","))
         line = line.split(",")
         global lanternfish
-        lanternfish = list(map(int, line))
+        line = list(map(int, line))
+        # Iterate through our starting lanternfish and increment their corresponding index
+        for fishTimer in line:
+            lanternfish[fishTimer] = lanternfish[fishTimer] + 1
 
 # Simulate lanternfish growth for a certain amount of days
 def simulateLanternfish(numDays):
     global lanternfish
-    global newborns
     # Start our range on day one
     for dayNum in range(1, numDays + 1):
-        # Simulate each lanternfish
-        for index, fishTimer in enumerate(lanternfish):
-            # if the fish timer is zero, spawn a new fish and reset its value to 6
-            if fishTimer == 0:
-                newborns.append(8)
-                lanternfish[index] = 6
+        newList = [0] * 9
+        print("After " + str(dayNum) + " day: " + str(lanternfish))
+        # We want to go down the list backwards to prevent losing any data
+        for index in range(len(lanternfish) - 1, -1, -1):
+            # if the index is eight, spawn new fish
+            if index == 8:
+                newList[index] = lanternfish[0]
+            # if the index is six, we want to get both the resetting fish PLUS the ones with a timer of 7
+            elif index == 6:
+                newList[index] = lanternfish[0] + lanternfish[index + 1]
             else:
-                lanternfish[index] = fishTimer - 1
-        # If we have any newborns, append them and reset the list
-        if len(newborns) > 0:
-            lanternfish = lanternfish + newborns
-            newborns.clear()
+                newList[index] = lanternfish[index + 1]
+        lanternfish = newList.copy()
 
-    return len(lanternfish)
+    # Now get the final count of fish
+    totalFishCount = 0
+    for fishCount in lanternfish:
+        totalFishCount = totalFishCount + fishCount
+    return totalFishCount
 
 # Are we running against test or input?
 runFlag = sys.argv[1]
@@ -47,9 +53,6 @@ runFlag = sys.argv[1]
 numDays = int(sys.argv[2])
 
 getData(runFlag)
-
-print("Initial state: " + str(lanternfish))
-print("Simulating " + str(numDays) + " days")
 
 numLanternFish = simulateLanternfish(numDays)
 
