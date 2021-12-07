@@ -26,51 +26,64 @@ def buildCrabPositionIndex(crabPositions):
         crabCounts[crabPosition] = crabCounts[crabPosition] + 1
     return crabCounts
 
-# Sum up all crabs to the right of our starting position
-def getRightCrabs(crabCounts):
-    rightCrabCount = 0
-    rightCrabDistance = 0
-    for index, crabCount in enumerate(crabCounts[1:]):
-        # We only care about crabs to the right so start at index position 1
-        # For each index we'll add the number of crabs stored to the count, then calculate the distance
-        # from zero, multiply it by the number of crabs there and add it to the total right distance
+# Build an index of move costs to use later so we don't have to redo this over and over
+# We keep this in its own function as our understanding of move costs may change in the future
+def buildMoveCostsIndex(crabCounts):
+    totalDistance = len(crabCounts)
+    moveCosts = [0]
+    for distance in range(1, totalDistance):
+        totalCosts = moveCosts[distance - 1] + distance
+        moveCosts.append(totalCosts)
+    return moveCosts
+
+# Sum up all fuel costs for crabs to the right of our position
+def getRightCrabFuel(position, crabCounts, moveCosts):
+    rightCrabFuel = 0
+    # We only care about crabs to the right so start at the position given to us
+    for index, crabCount in enumerate(crabCounts[position + 1:]):
+        # For each index we'll see how many crabs exist there and multiply it by it's corresponding moveCost
         if crabCount > 0:
-            rightCrabCount = rightCrabCount + crabCount
-            rightCrabDistance = rightCrabDistance + ((index+1) * crabCount)
-    return rightCrabCount, rightCrabDistance
+            rightCrabFuel = rightCrabFuel + ((moveCosts[index + 1]) * crabCount)
+    return rightCrabFuel
+
+# Sum up all fuel costs for crabs to the left of our position
+def getLeftCrabFuel(position, crabCounts, moveCosts):
+    leftCrabFuel = 0
+    # We only care about crabs to the left so start at zero and move up until we hit our position
+    for index, crabCount in enumerate(crabCounts[:position]):
+        # For each index we'll see how many crabs exist there and multiply it by it's corresponding moveCost
+        if crabCount > 0:
+            leftCrabFuel = leftCrabFuel + ((moveCosts[position - index]) * crabCount)
+    return leftCrabFuel
 
 # Find the ideal position for all crab submarines to move to while minimizing fuel usage
-def findIdealPosition(crabPositions, crabCounts):
+def findIdealPosition(crabPositions, crabCounts, moveCosts):
     # We'll initialize at the leftmost crab
-    currentCrabs = crabCounts[crabPositions[0]]
-    # Since we're starting at the leftmost crab, leftCrabs is safe to initialize at zero
-    leftCrabCount = 0
-    leftCrabDistance = 0
-    rightCrabCount, rightCrabDistance = getRightCrabs(crabCounts)
-    idealDistance = rightCrabDistance
     idealPosition = 0
+    # Since we're starting at the leftmost crab, leftCrabFuel is safe to initialize at zero
+    leftCrabFuel = 0
+    rightCrabFuel = getRightCrabFuel(0, crabCounts, moveCosts)
+    idealFuel = rightCrabFuel
 
-    # Now we iterate to the right.  Keep track of the number of crabs to the left and right along with their distances
+    # Now we iterate to the right.  Recalculate the fuel costs to the right and left and see if it's better than our previous best
     for index, crabCount in enumerate(crabCounts):
         # skip the first index since this has already been handled
         if index == 0:
             continue
-        leftCrabCount = leftCrabCount + crabCounts[index - 1]
-        leftCrabDistance = leftCrabDistance + leftCrabCount
-        currentCrabs = crabCounts[index]
-        rightCrabDistance = rightCrabDistance - rightCrabCount
-        rightCrabCount = rightCrabCount - currentCrabs
-        if (leftCrabDistance + rightCrabDistance) < idealDistance:
-            idealDistance = (leftCrabDistance + rightCrabDistance)
+        leftCrabFuel = getLeftCrabFuel(index, crabCounts, moveCosts)
+        rightCrabFuel = getRightCrabFuel(index, crabCounts, moveCosts)
+        totalFuel = leftCrabFuel + rightCrabFuel
+        if totalFuel < idealFuel:
+            idealFuel = totalFuel
             idealPosition = index
-
-    return idealPosition, idealDistance
+    return idealPosition, idealFuel
 
 # Are we running against test or input?
 runFlag = sys.argv[1]
 
 crabPositions = getData(runFlag)
 crabCounts = buildCrabPositionIndex(crabPositions)
-idealPosition, idealDistance = findIdealPosition(crabPositions, crabCounts)
-print("Final answer: (" + str(idealPosition) + "," + str(idealDistance) + ")")
+moveCosts = buildMoveCostsIndex(crabCounts)
+idealPosition, idealFuel = findIdealPosition(crabPositions, crabCounts, moveCosts)
+print("Final answer: (" + str(idealPosition) + "," + str(idealFuel) + ")")
 print("Done!")
