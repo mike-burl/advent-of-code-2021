@@ -28,14 +28,14 @@ def calculateRiskLevel(lavaMap):
 def isLowPoint(x, y, lavaMap):
     # If at any point we find a bordering value with a lower value, return false
     # North
-    if x > 0 and lavaMap[x][y] > lavaMap[x - 1][y]:
+    if x > 0 and lavaMap[x][y] >= lavaMap[x - 1][y]:
         return False
     # South
-    elif x < (len(lavaMap) - 1) and lavaMap[x][y] > lavaMap[x + 1][y]:
+    elif x < (len(lavaMap) - 1) and lavaMap[x][y] >= lavaMap[x + 1][y]:
         return False
-    elif y > 0 and lavaMap[x][y] > lavaMap[x][y - 1]:
+    elif y > 0 and lavaMap[x][y] >= lavaMap[x][y - 1]:
         return False
-    elif y < (len(lavaMap[x]) - 1) and lavaMap[x][y] > lavaMap[x][y + 1]:
+    elif y < (len(lavaMap[x]) - 1) and lavaMap[x][y] >= lavaMap[x][y + 1]:
         return False
 
     # Everything else is higher, return True
