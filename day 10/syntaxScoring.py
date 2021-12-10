@@ -1,4 +1,5 @@
 import sys
+import pprint
 
 # Open the data file and extract our data
 def getData(runFlag):
@@ -27,11 +28,29 @@ def bracketsMatch(openingChar, closingChar):
         return True
     else:
         return False
+
+# Close out all the remaining characters
+def completeCharBuffer(openingCharBuffer):
+    closeString = []
+    while len(openingCharBuffer) > 0:
+        openChar = openingCharBuffer.pop()
+        if openChar == '(':
+            closeString.append(')')
+        elif openChar == '[':
+            closeString.append(']')
+        elif openChar == '{':
+            closeString.append('}')
+        elif openChar == '<':
+            closeString.append('>')
+    return closeString
     
 # Scan through each line of code and flag the first illegal character encountered
-def getIllegalChars(codeLines):
+# If no illegal characters are encountered, generate an autocompletion string 
+def parseLines(codeLines):
     illegalChars = []
+    completionStrings = []
     for line in codeLines:
+        legalString = True
         openingCharBuffer = []
         for char in line:
             # If it's an opening char, add it to our buffer and continue
@@ -42,8 +61,12 @@ def getIllegalChars(codeLines):
                 prevChar = openingCharBuffer.pop()
                 if not bracketsMatch(prevChar, char):
                     illegalChars.append(char)
+                    legalString = False
                     break
-    return illegalChars
+        # If we make it to here without encountering an illegal character, close the remaining brackets in the buffer and append it to our completionStrings list
+        if legalString:
+            completionStrings.append(completeCharBuffer(openingCharBuffer))
+    return illegalChars, completionStrings
 
 # Sum up the scores for all the illegal characters found
 def getSyntaxErrorScore(illegalChars):
@@ -59,10 +82,34 @@ def getSyntaxErrorScore(illegalChars):
             score = score + 25137
     return score
 
+# Find the median completion score for all the completion strings passed in
+def getCompletionScore(completionStrings):
+    completionScores = []
+    for string in completionStrings:
+        stringScore = 0
+        for char in string:
+            stringScore = stringScore * 5
+            if char == ')':
+                stringScore = stringScore + 1
+            elif char == ']':
+                stringScore = stringScore + 2
+            elif char == '}':
+                stringScore = stringScore + 3
+            elif char == '>':
+                stringScore = stringScore + 4
+        completionScores.append(stringScore)
+
+    # Now that we have our full list of scores, sort them and find the median score
+    completionScores.sort()
+    finalScoreIndex = int(len(completionScores) / 2)
+    finalScore = completionScores[finalScoreIndex]
+    return finalScore
+
 # Are we running against test or input?
 runFlag = sys.argv[1]
 codeLines = getData(runFlag)
-illegalChars = getIllegalChars(codeLines)
-finalAnswer = getSyntaxErrorScore(illegalChars)
-print(str(finalAnswer))
+illegalChars, completionStrings = parseLines(codeLines)
+syntaxScore = getSyntaxErrorScore(illegalChars)
+completionScore = getCompletionScore(completionStrings)
+print("Syntax score: " + str(syntaxScore) + " Completion score: " + str(completionScore))
 print("Done!")
