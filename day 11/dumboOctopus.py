@@ -51,8 +51,12 @@ runFlag = sys.argv[1]
 numSteps = int(sys.argv[2])
 octoGrid = getData(runFlag)
 totalFlashes = 0
+numSteps = 0
+stepFlashes = 0
 # Run number of steps as user put in as argument
-for step in range(numSteps):
+while stepFlashes != 100:
+    stepFlashes = 0
+    numSteps = numSteps + 1
     # First incrememnt the energy level of each octopus by 1
     for x, octoLine in enumerate(octoGrid):
         for y, octopus in enumerate(octoLine):
@@ -81,7 +85,9 @@ for step in range(numSteps):
             if octoGrid[x][y] > 9:
                 octoGrid[x][y] = 0
                 totalFlashes = totalFlashes + 1
+                stepFlashes = stepFlashes + 1
     # print("After step " + str(step + 1) + ":")
     # pprint.pprint(octoGrid)
+print("Total steps: " + str(numSteps))
 print("Total flashes: " + str(totalFlashes))
 print("Done!")
