@@ -21,7 +21,7 @@ def getData(runFlag):
     return passages
 
 # Recursively traverse the graph
-def getSubPaths(currentCave, path, passages):
+def getSubPaths(currentCave, path, passages, smallCaveRevisited):
     path.append(currentCave)
     # If we're at the end just return one
     if currentCave == "end":
@@ -33,10 +33,14 @@ def getSubPaths(currentCave, path, passages):
     for subPath in subPathList:
         # If the subPath is lowercase we need to made sure we haven't already visited it
         # Remember that lists are implicitly passed by reference, so for each recursive iteration we'll need to copy the path list
-        if subPath.islower() and subPath not in path:
-            subPathCount = subPathCount + getSubPaths(subPath, path.copy(), passages)
+        # Since small caves can now be revisited we also need to ensure it's not the starting cave
+        if subPath.islower() and subPath not in path and subPath != "start":
+            subPathCount = subPathCount + getSubPaths(subPath, path.copy(), passages, smallCaveRevisited)
         elif subPath.isupper():
-            subPathCount = subPathCount + getSubPaths(subPath, path.copy(), passages)
+            subPathCount = subPathCount + getSubPaths(subPath, path.copy(), passages, smallCaveRevisited)
+        # Add another condition where we've already visisted the small cave but smallCaveRevisisted is still False
+        elif subPath.islower() and subPath in path and not smallCaveRevisited and subPath != "start":
+            subPathCount = subPathCount + getSubPaths(subPath, path.copy(), passages, True)
     return subPathCount
 
 # Are we running against test or input?
@@ -47,7 +51,8 @@ passages = getData(runFlag)
 # If the connected cave is upper case, we'll just go to it.  If the cave is lower case, check to make sure
 # that it isn't in our list of visited caves already.  Return the sum of each of the sub-paths.  If we hit
 # the end, return one.  If we can't move to any other caves, return zero.
+# For part two we'll add a flag 'smallCaveRevisited' that is initialized as False
 path = []
-numPaths = getSubPaths("start", path, passages)
+numPaths = getSubPaths("start", path, passages, False)
 print("Number of unique paths: " + str(numPaths))
 print("Done!")
