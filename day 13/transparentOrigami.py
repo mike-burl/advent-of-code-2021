@@ -45,6 +45,25 @@ def removeDuplicates(marks):
             dedupedMarks.append(mark)
     return dedupedMarks
 
+# Create a grid of dots, iterate through our remaining coordinates to set the pixels, then print it so we see what the answer is
+def printFinalAnswer(marks):
+    greatestX = 0
+    greatestY = 0
+    for mark in marks:
+        if mark[0] > greatestX:
+            greatestX = mark[0]
+        if mark[1] > greatestY:
+            greatestY = mark[1]
+    grid = []
+    for Y in range(greatestY + 1):
+        line = ""
+        for X in range(greatestX + 1):
+            line = line + '-'
+        grid.append(line)
+    for mark in marks:
+        grid[mark[1]] = grid[mark[1]][:mark[0]] + '#' + grid[mark[1]][mark[0]+1:]
+    pprint.pprint(grid)
+    
 # Are we running against test or input?
 runFlag = sys.argv[1]
 marks, instructions = getData(runFlag)
@@ -61,6 +80,6 @@ for fold in instructions:
         marks = verticalFold(marks, loc)
     # Now remove duplicate marks
     marks = removeDuplicates(marks)
-    print(str(len(marks)) + " visible marks")
-
+print("After folding, " + str(len(marks)) + " visible marks remain")
+printFinalAnswer(marks)
 print("Done!")
