@@ -8,13 +8,20 @@ def getData(runFlag):
         lines = file.readlines()
 
     # We'll extract the input into a standard 2d list
+    # Repeat the process five times in both the x and y directions
     riskMap = []
-    for line in lines:
-        line = line.rstrip()
-        riskLine = []
-        for number in line:
-            riskLine.append(int(number))
-        riskMap.append(riskLine)
+    for i in range(5):
+        for line in lines:
+            line = line.rstrip()
+            riskLine = []
+            # We want to loop this process five times
+            for j in range(5):
+                for number in line:
+                    wrappedNumber = int(number) + j + i
+                    if wrappedNumber > 9: 
+                        wrappedNumber = wrappedNumber - 9
+                    riskLine.append(wrappedNumber)
+            riskMap.append(riskLine)
     return riskMap
 
 # Iterate through the four neighbors of the passed position and find the lowest cost viable neighbor
