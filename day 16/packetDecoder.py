@@ -1,6 +1,5 @@
 import sys
-import pprint
-import math
+from numpy import prod
 
 # Open the data file and extract our data
 def getData(runFlag):
@@ -31,6 +30,7 @@ def processOperator(message):
         length = int(message[:15], 2)
         message = message[15:]
         subPackets = message[:length]
+        print("packetType: operator type 0 | message length remaining: " + str(len(message)) + " subPacketLength: " + str(length))
         # There's still more message potentially left, hold it here
         message = message[length:]
         while not isDone(subPackets):
@@ -39,10 +39,23 @@ def processOperator(message):
         numSubPackets = int(message[:11], 2)
         message = message[11:]
         packetCount = 0
+        print("packetType: operator type 1 | message length remaining: " + str(len(message)) + " numSubPackets: " + str(numSubPackets))
         while packetCount < numSubPackets:
             packetCount+=1
             message = processPacket(message)
     return message
+
+# Execute what we have on the stack so far
+def execute(stack):
+    literals = []
+    nextInput = stack.pop()
+    while isinstance(nextInput, int):
+        literals.append(nextInput)
+        nextInput = stack.pop()
+    # Once there's no numbers left in the stack, we know we have a function
+    # Pass the numbers we've extracted to the function on the stack and return the result
+    print("Executing function: " + str(nextInput) + " on values: " + str(literals))
+    return nextInput(literals)
 
 # This will determine what kind of packet we're dealing with and split from there
 # Version number will be placed into the version list right away
@@ -56,10 +69,11 @@ def processPacket(message):
     if packetType == 4:
         value, message = getLiteral(message)
         stack.append(value)
+        print("packetType: literal | message length remaining: " + str(len(message)) + " value: " + str(value))
     else:
-        stack.append("do this later")
+        stack.append(mathLookup[packetType])
         message = processOperator(message)
-        stack.append("do this later")
+        stack.append(execute(stack))
     return message
 
 # Are we running against test or input?
@@ -67,6 +81,14 @@ runFlag = sys.argv[1]
 message = getData(runFlag)
 binary = ""
 finalBinary = ""
+mathLookup = {0: sum,
+         1: (lambda x: int(prod(x))),
+         2: min,
+         3: max,
+         5: (lambda x: 1 if x[1]>x[0] else 0), 
+         6: (lambda x: 1 if x[1]<x[0] else 0), 
+         7: (lambda x: 1 if x[1]==x[0] else 0) 
+         }
 # Convert the hexadecimal message to binary
 for char in message:
     binary = str("{0:04b}".format(int(char, 16)))
@@ -74,5 +96,5 @@ for char in message:
 versions = []
 stack = []
 processPacket(finalBinary)
-print(sum(versions))
+print(str(stack[0]))
 print("Done!")
