@@ -1,5 +1,5 @@
 import sys
-from numpy import prod
+import math
 
 # Open the data file and extract our data
 def getData(runFlag):
@@ -30,7 +30,6 @@ def processOperator(message):
         length = int(message[:15], 2)
         message = message[15:]
         subPackets = message[:length]
-        print("packetType: operator type 0 | message length remaining: " + str(len(message)) + " subPacketLength: " + str(length))
         # There's still more message potentially left, hold it here
         message = message[length:]
         while not isDone(subPackets):
@@ -39,7 +38,6 @@ def processOperator(message):
         numSubPackets = int(message[:11], 2)
         message = message[11:]
         packetCount = 0
-        print("packetType: operator type 1 | message length remaining: " + str(len(message)) + " numSubPackets: " + str(numSubPackets))
         while packetCount < numSubPackets:
             packetCount+=1
             message = processPacket(message)
@@ -54,8 +52,8 @@ def execute(stack):
         nextInput = stack.pop()
     # Once there's no numbers left in the stack, we know we have a function
     # Pass the numbers we've extracted to the function on the stack and return the result
-    print("Executing function: " + str(nextInput) + " on values: " + str(literals))
-    return nextInput(literals)
+    result = nextInput(literals)
+    return result
 
 # This will determine what kind of packet we're dealing with and split from there
 # Version number will be placed into the version list right away
@@ -69,7 +67,6 @@ def processPacket(message):
     if packetType == 4:
         value, message = getLiteral(message)
         stack.append(value)
-        print("packetType: literal | message length remaining: " + str(len(message)) + " value: " + str(value))
     else:
         stack.append(mathLookup[packetType])
         message = processOperator(message)
@@ -82,7 +79,7 @@ message = getData(runFlag)
 binary = ""
 finalBinary = ""
 mathLookup = {0: sum,
-         1: (lambda x: int(prod(x))),
+         1: (lambda x: math.prod(x)),
          2: min,
          3: max,
          5: (lambda x: 1 if x[1]>x[0] else 0), 
@@ -97,4 +94,3 @@ versions = []
 stack = []
 processPacket(finalBinary)
 print(str(stack[0]))
-print("Done!")
