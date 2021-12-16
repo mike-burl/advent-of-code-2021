@@ -9,73 +9,58 @@ def getData(runFlag):
     message = lines[0].rstrip()
     return message
 
-# For now all we care about is version numbers.  First take out the version number, then find out if the packet is a literal or operator
-# If it's a literal, we're done.  Just return the version number
-# If it's an operator, split the packets out and recurse deeper.  Sum up the numbers they return, add it to the current packet, and return that
-def analyzePacket(binaryString, currentPacket, targetPacket, aboveBitLength):
-    #print("binary: " + binaryString)
-    print("currentPacket: " + str(currentPacket) + " targetPacket: " + str(targetPacket) + " aboveBitLength: " + str(aboveBitLength))
-    # Get the packet version and ID
-    packetVersion = binaryString[0:3]
-    packetTypeID = binaryString[3:6]
-    # Convert the version and ID to integers
-    packetVersion = int(packetVersion, 2)
-    packetTypeID = int(packetTypeID, 2)
-    print("packetVersion: " + str(packetVersion))
-    print("packetTypeID: " + str(packetTypeID))
-    if packetTypeID == 4:
-        print("analyzing literal packet...")
-        literalValueBinary = binaryString[6:]
-        #print("literalValueBinary: " + literalValueBinary)
-        groups = [literalValueBinary[i:i+5] for i in range(0, len(literalValueBinary), 5)]
-        nextGroups = []
-        #print("groups: " + str(groups))
-        dropPackets = False
-        for group in list(groups):
-            if dropPackets:
-                nextGroups.append(group)
-                groups.remove(group)
-                continue
-            if group[0] == '0':
-                dropPackets = True
-        #print("groups after drop: " + str(groups))
-        #print("nextGroups: " + str(nextGroups))
-        binaryLiteral = ""
-        for group in groups:
-            binaryLiteral = binaryLiteral + group[1:]
-        binaryDecimal = int(binaryLiteral, 2)
-        print(binaryLiteral)
-        print(str(binaryDecimal))
-        nextPacketVersion = 0
-        if len(nextGroups) > 0 and targetPacket == 0:
-            nextBinaryLiteral = "".join(nextGroups)
-            #print("nextBinaryLiteral: " + nextBinaryLiteral)
-            nextPacketVersion = analyzePacket(nextBinaryLiteral, 0, 0, 0)
-        elif len(nextGroups) > 0 and targetPacket > 0 and currentPacket < targetPacket:
-            nextBinaryLiteral = "".join(nextGroups)
-            #print("nextBinaryLiteral: " + nextBinaryLiteral)
-            nextPacketVersion = analyzePacket(nextBinaryLiteral, (currentPacket + 1), targetPacket, 0)
-        return packetVersion + nextPacketVersion
+# Check to see if the message is an end signal
+def isDone(message):
+    return not(message) or message == '' or int(message) == 0
+
+# Extract the literal values
+def getLiteral(message):
+    numStr = ''
+    moreNums = True
+    while moreNums:
+        moreNums = (message[0]=='1')
+        numStr += message[1:5]
+        message = message[5:]
+    return int(numStr,2), message
+
+# Use this function to split the functionality between operator packets
+def processOperator(message):
+    lengthID = message[0]
+    message = message[1:]
+    if lengthID == '0':
+        length = int(message[:15], 2)
+        message = message[15:]
+        subPackets = message[:length]
+        # There's still more message potentially left, hold it here
+        message = message[length:]
+        while not isDone(subPackets):
+            subPackets = processPacket(subPackets)
+    if lengthID == '1':
+        numSubPackets = int(message[:11], 2)
+        message = message[11:]
+        packetCount = 0
+        while packetCount < numSubPackets:
+            packetCount+=1
+            message = processPacket(message)
+    return message
+
+# This will determine what kind of packet we're dealing with and split from there
+# Version number will be placed into the version list right away
+def processPacket(message):
+    if isDone(message):
+        return None
+    # We have a valid packet, first thing's first, stash the version number
+    versions.append(int(message[:3], 2))
+    packetType = int(message[3:6], 2)
+    message = message[6:]
+    if packetType == 4:
+        value, message = getLiteral(message)
+        stack.append(value)
     else:
-        print("analyzing operator packet...")
-        lengthTypeID = binaryString[6:7]
-        packetVersionSum = 0
-        print("lengthTypeID: " + lengthTypeID)
-        if lengthTypeID == '0':
-            bitLength = binaryString[7:22]
-            bitLength = int(bitLength, 2)
-            print("bitLength: " + str(bitLength))
-            packetVersionSum = packetVersionSum + analyzePacket(binaryString[22:(22 + bitLength)], 0, 0, bitLength) 
-            if targetPacket > 0 and currentPacket < targetPacket:
-                packetVersionSum = packetVersionSum + analyzePacket(binaryString[(22 + bitLength):], (currentPacket + 1), targetPacket, 0)
-            elif (bitLength + 22) < aboveBitLength:
-                packetVersionSum = packetVersionSum + analyzePacket(binaryString[(22 + bitLength):], 0, 0, (aboveBitLength - 22 - bitLength))
-        else:
-            numSubPackets = binaryString[7:18]
-            numSubPackets = int(numSubPackets, 2)
-            print("numSubPackets: " + str(numSubPackets))
-            packetVersionSum = analyzePacket(binaryString[18:], 1, numSubPackets, 0)
-        return packetVersion + packetVersionSum
+        stack.append("do this later")
+        message = processOperator(message)
+        stack.append("do this later")
+    return message
 
 # Are we running against test or input?
 runFlag = sys.argv[1]
@@ -86,6 +71,8 @@ finalBinary = ""
 for char in message:
     binary = str("{0:04b}".format(int(char, 16)))
     finalBinary = finalBinary + binary
-versionSum = analyzePacket(finalBinary, 0, 0, 0)
-print("versionSum: " + str(versionSum))
+versions = []
+stack = []
+processPacket(finalBinary)
+print(sum(versions))
 print("Done!")
