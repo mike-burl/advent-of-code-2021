@@ -141,11 +141,12 @@ def getMagnitude(finalSnailNum):
 # Are we running against test or input?
 runFlag = sys.argv[1]
 snailNums = getData(runFlag)
-print("# of snailNums: " + str(len(snailNums)))
-finalSnailNum = snailNums[0]
-for index, snailNum in enumerate(snailNums[1:]):
-    finalSnailNum = addSnailNums(finalSnailNum, snailNum)
-    print(str((index+1)/(len(snailNums)-1))[0:4] + "% done")
-print(str(finalSnailNum))
-snailMagnitude = getMagnitude(finalSnailNum)
-print(str(snailMagnitude))
+largestMagnitude = 0
+for x, snailNum in enumerate(snailNums):
+    for y, otherSnailNum in enumerate(snailNums):
+        snailProduct = addSnailNums(snailNum, otherSnailNum)
+        magnitude = getMagnitude(snailProduct)
+        if magnitude > largestMagnitude:
+            largestMagnitude = magnitude
+    print(str((x+1)/(len(snailNums)))[0:4] + "% done")
+print(str(largestMagnitude))
