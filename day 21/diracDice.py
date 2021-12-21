@@ -47,4 +47,4 @@ while p1.roll(dice) < 1000 and p2.roll(dice) < 1000:
 print(str(p1.score))
 print(str(p2.score))
 print(str(dice.numRolls))
-print(str(p2.score * dice.numRolls))
+print(str(p1.score * dice.numRolls))
