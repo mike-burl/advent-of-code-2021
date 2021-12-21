@@ -77,12 +77,10 @@ def enhanceImage(image, algo, infinite):
 runFlag = sys.argv[1]
 numSteps = int(sys.argv[2])
 algo, image = getData(runFlag)
-#pprint.pprint(image)
 for step in range(numSteps):
     infinite = '0' if step % 2 == 0 else '1'
     image = expandImage(image, infinite)
     image = enhanceImage(image, algo, infinite)
-    #pprint.pprint(image)
 litPixels = 0
 for row in image:
     for cell in row:
