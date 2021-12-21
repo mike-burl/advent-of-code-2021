@@ -42,33 +42,33 @@ def expandImage(image):
     newImage.append(blankRow)
     return newImage
 
-neighborTuples = ([-1, -1],[-1, 0],[-1, 1],[0, -1],[0, 1],[1, -1],[1, 0],[1, 1])
-def getNeighborString(x, y, image):
-    returnString = image.get(y-1, MyList(['0'])).get(x-1, '0')
-    returnString += image.get(y-1, MyList(['0'])).get(x, '0')
-    returnString += image.get(y-1, MyList(['0'])).get(x+1, '0')
-    returnString += image.get(y, MyList(['0'])).get(x-1, '0')
-    returnString += image.get(y, MyList(['0'])).get(x, '0')
-    returnString += image.get(y, MyList(['0'])).get(x+1, '0')
-    returnString += image.get(y+1, MyList(['0'])).get(x-1, '0')
-    returnString += image.get(y+1, MyList(['0'])).get(x, '0')
-    returnString += image.get(y+1, MyList(['0'])).get(x+1, '0')
+def getNeighborString(x, y, image, step):
+    infinite = '0' if step % 2 == 0 else '1'
+    returnString = image.get(y-1, MyList([infinite])).get(x-1, infinite)
+    returnString += image.get(y-1, MyList([infinite])).get(x, infinite)
+    returnString += image.get(y-1, MyList([infinite])).get(x+1, infinite)
+    returnString += image.get(y, MyList([infinite])).get(x-1, infinite)
+    returnString += image.get(y, MyList([infinite])).get(x, infinite)
+    returnString += image.get(y, MyList([infinite])).get(x+1, infinite)
+    returnString += image.get(y+1, MyList([infinite])).get(x-1, infinite)
+    returnString += image.get(y+1, MyList([infinite])).get(x, infinite)
+    returnString += image.get(y+1, MyList([infinite])).get(x+1, infinite)
     return returnString
     
 # Take the coordinates and generate the new enhanced cell
-def enhanceCell(x, y, image, algo):
-    lookupString = getNeighborString(x, y, image)
+def enhanceCell(x, y, image, algo, step):
+    lookupString = getNeighborString(x, y, image, step)
     lookupInt = int(lookupString, 2)
     newCell = algo[lookupInt]
     return newCell
 
 # Iterate over each cell to generate the new enhanced image by applying the algo to it
-def enhanceImage(image, algo):
+def enhanceImage(image, algo, step):
     enhancedImage = MyList([])
     for y, row in enumerate(image):
         enhancedRow = MyList([])
         for x, cell in enumerate(row):
-            newCell = enhanceCell(x, y, image, algo)
+            newCell = enhanceCell(x, y, image, algo, step)
             enhancedRow.append(newCell)
         enhancedImage.append(enhancedRow)
     return enhancedImage
@@ -81,7 +81,7 @@ algo, image = getData(runFlag)
 #pprint.pprint(image)
 for step in range(numSteps):
     image = expandImage(image)
-    image = enhanceImage(image, algo)
+    image = enhanceImage(image, algo, step)
     #pprint.pprint(image)
 litPixels = 0
 for row in image:
