@@ -30,20 +30,19 @@ def getData(runFlag):
     return algo, image
 
 # Add a blank row in each direction for us to expand into
-def expandImage(image):
+def expandImage(image, infinite):
     dimension = len(image)
-    blankRow = MyList(['0'] * (dimension + 2))
+    blankRow = MyList([infinite] * (dimension + 2))
     newImage = MyList([])
     newImage.append(blankRow)
     for row in image:
-        newRow = MyList(['0'] + row + ['0'])
+        newRow = MyList([infinite] + row + [infinite])
         newImage.append(newRow)
-    blankRow = MyList(['0'] * (dimension + 2))
+    blankRow = MyList([infinite] * (dimension + 2))
     newImage.append(blankRow)
     return newImage
 
-def getNeighborString(x, y, image, step):
-    infinite = '0' if step % 2 == 0 else '1'
+def getNeighborString(x, y, image, infinite):
     returnString = image.get(y-1, MyList([infinite])).get(x-1, infinite)
     returnString += image.get(y-1, MyList([infinite])).get(x, infinite)
     returnString += image.get(y-1, MyList([infinite])).get(x+1, infinite)
@@ -56,19 +55,19 @@ def getNeighborString(x, y, image, step):
     return returnString
     
 # Take the coordinates and generate the new enhanced cell
-def enhanceCell(x, y, image, algo, step):
-    lookupString = getNeighborString(x, y, image, step)
+def enhanceCell(x, y, image, algo, infinite):
+    lookupString = getNeighborString(x, y, image, infinite)
     lookupInt = int(lookupString, 2)
     newCell = algo[lookupInt]
     return newCell
 
 # Iterate over each cell to generate the new enhanced image by applying the algo to it
-def enhanceImage(image, algo, step):
+def enhanceImage(image, algo, infinite):
     enhancedImage = MyList([])
     for y, row in enumerate(image):
         enhancedRow = MyList([])
         for x, cell in enumerate(row):
-            newCell = enhanceCell(x, y, image, algo, step)
+            newCell = enhanceCell(x, y, image, algo, infinite)
             enhancedRow.append(newCell)
         enhancedImage.append(enhancedRow)
     return enhancedImage
@@ -80,8 +79,9 @@ numSteps = int(sys.argv[2])
 algo, image = getData(runFlag)
 #pprint.pprint(image)
 for step in range(numSteps):
-    image = expandImage(image)
-    image = enhanceImage(image, algo, step)
+    infinite = '0' if step % 2 == 0 else '1'
+    image = expandImage(image, infinite)
+    image = enhanceImage(image, algo, infinite)
     #pprint.pprint(image)
 litPixels = 0
 for row in image:
