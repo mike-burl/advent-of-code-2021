@@ -17,6 +17,9 @@ def rollDie(pPos, pScore, roll):
         pScore += pPos
     return pPos, pScore
 
+# We don't actually care about rolling the dice three times, all we care about is the final outcome
+# This is the distribution of possible rolls for each turn
+quantumCombos = {3: 1, 4: 3, 5: 6, 6: 7, 7: 6, 8: 3, 9: 1}
 # Recursive function with a cache.  First check out cache to see if this game state has been encountered
 # If it has, just return the results
 # If it hasn't, we need to simulate it still
@@ -24,77 +27,34 @@ def quantumDice(p1Pos, p1Score, p2Pos, p2Score, p1Turn):
     targetScore = 21
     # The mirror state is no different from our current state, just with the player outcomes reversed
     gameState = str(p1Turn) + ":" + str(p1Pos) + ":" + str(p1Score) + ":" + str(p2Pos) + ":" + str(p2Score)
-    #print(gameState)
-    printOut = gameState
     mirrorState = str(not p1Turn) + str(p2Pos) + str(p2Score) + str(p1Pos) + str(p1Score)
     if gameState in realityCache:
-        print("We've already been here: " + gameState)
         return realityCache[gameState]
     elif mirrorState in realityCache:
         mirrorState = realityCache[mirrorState]
-        print("This place feels familiar")
         return [mirrorState[1], mirrorState[0]]
     else:
         # This situation hasn't been encountered yet
         # Determine which player's turn it is
         subState = [0, 0]
         if p1Turn:
-            # Roll one
-            p1R1Pos, p1R1Score = rollDie(p1Pos, p1Score, 1)
-            if p1R1Score >= targetScore:
-                subState[0] += 1
-            else:
-                tempState = quantumDice(p1R1Pos, p1R1Score, p2Pos, p2Score, False)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
-            # Roll Two
-            p1R2Pos, p1R2Score = rollDie(p1Pos, p1Score, 2)
-            if p1R2Score >= targetScore:
-                subState[0] += 1
-            else:
-                tempState = quantumDice(p1R2Pos, p1R2Score, p2Pos, p2Score, False)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
-            # Roll Three
-            p1R3Pos, p1R3Score = rollDie(p1Pos, p1Score, 3)
-            if p1R3Score >= targetScore:
-                subState[0] += 1
-            else:
-                tempState = quantumDice(p1R3Pos, p1R3Score, p2Pos, p2Score, False)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
+            for combo in quantumCombos:
+                p1NewPos, p1NewScore = rollDie(p1Pos, p1Score, combo)
+                if p1NewScore >= targetScore:
+                    subState[0] += quantumCombos[combo]
+                else:
+                    tempState = quantumDice(p1NewPos, p1NewScore, p2Pos, p2Score, False)
+                    subState[0] += (tempState[0] * quantumCombos[combo])
+                    subState[1] += (tempState[1] * quantumCombos[combo])
         else:
-            # Roll one
-            p2R1Pos, p2R1Score = rollDie(p2Pos, p2Score, 1)
-            if p2R1Score >= targetScore:
-                subState[1] += 1
-            else:
-                tempState = quantumDice(p1Pos, p1Score, p2R1Pos, p2R1Score, True)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
-            # Roll Two
-            p2R2Pos, p2R2Score = rollDie(p2Pos, p2Score, 2)
-            if p2R2Score >= targetScore:
-                subState[1] += 1
-            else:
-                tempState = quantumDice(p1Pos, p1Score, p2R2Pos, p2R2Score, True)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
-            # Roll Three
-            p2R3Pos, p2R3Score = rollDie(p2Pos, p2Score, 3)
-            if p2R3Score >= targetScore:
-                subState[1] += 1
-            else:
-                tempState = quantumDice(p1Pos, p1Score, p2R3Pos, p2R3Score, True)
-                subState[0] += tempState[0]
-                subState[1] += tempState[1]
-            #printOut = printOut + "||" + str(subState)
-        #print(printOut)
+            for combo in quantumCombos:
+                p2NewPos, p2NewScore = rollDie(p2Pos, p2Score, combo)
+                if p2NewScore >= targetScore:
+                    subState[1] += quantumCombos[combo]
+                else:
+                    tempState = quantumDice(p1Pos, p1Score, p2NewPos, p2NewScore, True)
+                    subState[0] += (tempState[0] * quantumCombos[combo])
+                    subState[1] += (tempState[1] * quantumCombos[combo])
         realityCache[gameState] = subState
         return subState
 
