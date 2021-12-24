@@ -4,6 +4,7 @@ class StateList:
     states = []
     visited = {}
     toVisit = {}
+    numEvals = 0
     def binarySearch(self, arr, low, high, x):
         mid = (high + low) // 2
         if high >= low:
@@ -17,6 +18,7 @@ class StateList:
             return mid + 1
         
     def addState(self, newState):
+        self.numEvals += 1
         key = newState[1]
         val = newState[0]
         if key in self.visited:
@@ -76,18 +78,18 @@ class StateList:
             print(str(state))
 
 class Room:
-    def __init__(self, prawnA, prawnB):
-        self.occupants = [prawnA, prawnB]
+    def __init__(self, prawnA, prawnB, prawnC, prawnD):
+        self.occupants = [prawnA, prawnB, prawnC, prawnD]
 
 class Hallway:
     doors = [3, 5, 7, 9]
     def __init__(self, hallwayLength, doorA, doorB, doorC, doorD):
         self.hall = ['E'] * hallwayLength
         self.doors = []
-        self.doors.append(Room(doorA[0], doorA[1]))
-        self.doors.append(Room(doorB[0], doorB[1]))
-        self.doors.append(Room(doorC[0], doorC[1]))
-        self.doors.append(Room(doorD[0], doorD[1]))
+        self.doors.append(Room(doorA[0], doorA[1], doorA[2], doorA[3]))
+        self.doors.append(Room(doorB[0], doorB[1], doorB[2], doorB[3]))
+        self.doors.append(Room(doorC[0], doorC[1], doorC[2], doorC[3]))
+        self.doors.append(Room(doorD[0], doorD[1], doorD[2], doorD[3]))
 
     def getRoomStrings(self):
         returnString = ''
@@ -102,7 +104,7 @@ def getHallwayString(state):
     return state[:11]
 
 def getDoorStrings(state):
-    return [state[12:14], state[14:16], state[16:18], state[18:20]]
+    return [state[12:16], state[16:20], state[20:24], state[24:28]]
 
 def buildDoorStrings(doors):
     newDoorStrings = ''
@@ -112,19 +114,23 @@ def buildDoorStrings(doors):
 
 # Determine if this is a legal move for the fish
 def isLegalHallwayToDoor(fish, dI, door):
-    if fish == 'A' and dI == 0:
-        if door[1] == 'E' or door[1] == 'A':
-            return True
-    elif fish == 'B' and dI == 1:
-        if door[1] == 'E' or door[1] == 'B':
-            return True
-    elif fish == 'C' and dI == 2:
-        if door[1] == 'E' or door[1] == 'C':
-            return True
-    elif fish == 'D' and dI == 3:
-        if door[1] == 'E' or door[1] == 'D':
-            return True
-    return False
+    # First see if the fish even wants to go through this door
+    if fish == 'A' and dI != 0:
+        return False
+    elif fish == 'B' and dI != 1:
+        return False
+    elif fish == 'C' and dI != 2:
+        return False
+    elif fish == 'D' and dI != 3:
+        return False
+    # Now see that all the occupants are the same type of fish
+    for char in door:
+        if char == 'E':
+            continue
+        elif char != fish:
+            return False
+    # If we get this far they should be cool with it
+    return True
 
 # Get the length of the path from the hallway to the door
 # Return -1 if the path is blocked
@@ -150,13 +156,22 @@ def moveHallwayToDoor(hallway, hI, doors, dI, pathCost, cost):
     newHallway = hallway[:hI] + 'E' + hallway[hI + 1:]
     hallwayCost = moveCosts[fish] * pathCost
     door = doors[dI]
-    if door[1] == 'E':
+    # Start as far back as we can and move forwards
+    if door[3] == 'E':
+        totalCost = cost + hallwayCost + (moveCosts[fish] * 4)
+        newDoor = ['E', 'E', 'E', fish]
+        states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
+    elif door[2] == 'E':
+        totalCost = cost + hallwayCost + (moveCosts[fish] * 3)
+        newDoor = ['E', 'E', fish, fish]
+        states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
+    elif door[1] == 'E':
         totalCost = cost + hallwayCost + (moveCosts[fish] * 2)
-        newDoor = ['E', fish]
+        newDoor = ['E', fish, fish, fish]
         states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
     elif door[0] == 'E':
         totalCost = cost + hallwayCost + moveCosts[fish]
-        newDoor = [fish, fish]
+        newDoor = [fish, fish, fish, fish]
         states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
     
 # Generate moves for a hallway position to a door
@@ -185,6 +200,20 @@ def getHallwayMoves(state, cost):
             for dI, door in enumerate(doors):
                 hallwayToDoor(hallway, hI, doors, dI, cost)
 
+# Pop the top fish out of a door and return the new string
+def popFish(door):
+    newDoor = []
+    fishPopped = False
+    for char in door:
+        if char == 'E':
+            newDoor.append(char)
+        elif not fishPopped:
+            newDoor.append('E')
+            fishPopped = True
+        else:
+            newDoor.append(char)
+    return newDoor
+
 illegalRooms = [2, 4, 6, 8]
 # Generate all possible moves to the left and right of the door
 def getDoorToHallway(hallway, doors, dI, fish, cost):
@@ -194,7 +223,7 @@ def getDoorToHallway(hallway, doors, dI, fish, cost):
         if hallway[i] == 'E':
             if i not in illegalRooms:
                 newHallway = hallway[:i] + fish + hallway[i+1:]
-                newDoor = ['E', doors[dI][1]] if doors[dI][0] == fish else ['E', 'E']
+                newDoor = popFish(doors[dI])
                 totalCost = cost + ((originDoorIndex - i + 1) * moveCosts[fish])
                 states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
         else:
@@ -204,7 +233,7 @@ def getDoorToHallway(hallway, doors, dI, fish, cost):
         if hallway[i] == 'E':
             if (i) not in illegalRooms:
                 newHallway = hallway[:i] + fish + hallway[i+1:]
-                newDoor = ['E', doors[dI][1]] if doors[dI][0] == fish else ['E', 'E']
+                newDoor = popFish(doors[dI])
                 totalCost = cost + ((i - (originDoorIndex) + 1) * moveCosts[fish])
                 states.addState([totalCost, newHallway + ":" + buildDoorStrings(doors[:dI] + newDoor + doors[dI+1:])])
         else:
@@ -213,33 +242,60 @@ def getDoorToHallway(hallway, doors, dI, fish, cost):
 # Generate all possible moves from the given door
 def generateDoorMoves(state, dI, doors, cost):
     hallway = getHallwayString(state)
-    # is the first or second position moving
-    if doors[dI][0] == 'E' and doors[dI][1] != 'E':
-        getDoorToHallway(hallway, doors, dI, doors[dI][1], cost + moveCosts[doors[dI][1]])
-    elif doors[dI][0] != 'E':
+    # is the first, second, third, or fourth position moving
+    if doors[dI][0] != 'E':
         getDoorToHallway(hallway, doors, dI, doors[dI][0], cost)
+    elif doors[dI][1] != 'E':
+        getDoorToHallway(hallway, doors, dI, doors[dI][1], cost + moveCosts[doors[dI][1]])
+    elif doors[dI][2] != 'E':
+        getDoorToHallway(hallway, doors, dI, doors[dI][2], cost + (moveCosts[doors[dI][2]]*2))
+    else:
+        getDoorToHallway(hallway, doors, dI, doors[dI][3], cost + (moveCosts[doors[dI][3]]*3))
+        
 
 # Check if all fish in the door are happy with where they're at
 def doorComplete(door, dI):
     doorSet = ''.join(set(door))
-    if len(doorSet) > 1:
+    # If we have three or more characters, we have some unhappy neighbors
+    if len(doorSet) >= 3:
         return False
-    elif dI == 0 and doorSet[0] == 'A':
-        return True
-    elif dI == 1 and doorSet[0] == 'B':
-        return True
-    elif dI == 2 and doorSet[0] == 'C':
-        return True
-    elif dI == 3 and doorSet[0] == 'D':
-        return True
+    # If we have two, check to see if the occupants want to be there
+    elif len(doorSet) == 2:
+        # See if the other character is empty, if it isn't then just return false
+        if 'E' not in doorSet:
+            return False
+        # Let's see what the other character is and if it belongs there  
+        elif dI == 0 and 'A' in doorSet:
+            return True
+        elif dI == 1 and 'B' in doorSet:
+            return True
+        elif dI == 2 and 'C' in doorSet:
+            return True
+        elif dI == 3 and 'D' in doorSet:
+            return True
+        else:
+            return False
+    # If we get here we just need to see what's in it
     else:
-        return False
+        # It's an empty room, we can't use this to generate moves
+        if 'E' in doorSet:
+            return True
+        elif dI == 0 and 'A' in doorSet:
+            return True
+        elif dI == 1 and 'B' in doorSet:
+            return True
+        elif dI == 2 and 'C' in doorSet:
+            return True
+        elif dI == 3 and 'D' in doorSet:
+            return True
+        else:
+            return False
 
 # Get all possible moves originating from each of the doors
 def getDoorMoves(state, cost):
     doors = getDoorStrings(state)
     for dI, door in enumerate(doors):
-        if door[0] != 'E' or door[1] != 'E' or not doorComplete(door, dI):
+        if not doorComplete(door, dI):
             generateDoorMoves(state, dI, doors, cost)
             
 # Given the state, build a list for all possible moves with their associated costs
@@ -248,8 +304,8 @@ def getPossibleMoves(state, cost):
     getDoorMoves(state, cost)
 
 # Define our hallway
-hallway = Hallway(11, ['D', 'C'], ['A', 'A'], ['C', 'B'], ['D', 'B'])
-endState = 'EEEEEEEEEEE:AABBCCDD'
+hallway = Hallway(11, ['D', 'D', 'D', 'C'], ['A', 'C', 'B', 'A'], ['C', 'B', 'A', 'B'], ['D', 'A', 'C', 'B'])
+endState = 'EEEEEEEEEEE:AAAABBBBCCCCDDDD'
 endStateReached = False
 states = StateList()
 # We want to cache the initial state so we don't hit it again
@@ -257,11 +313,9 @@ startingState = hallway.toString()
 states.addState([0, startingState])
 while not endStateReached:
     nextMove = states.getState()
-    if nextMove[0] % 1000 == 0:
-        print(str(nextMove))
     if nextMove[1] == endState:
         endStateReached = True
         break
     getPossibleMoves(nextMove[1], nextMove[0])
 print(str(nextMove))
-
+print("# of evaluations: " + str(states.numEvals))
